@@ -14,7 +14,7 @@ public class AccountServiceImpl implements AccountService {
     
     @Override
     public Account createAccount(NewAccountRequest newAccountRequest) {
-        Validate.isTrue(newAccountRequest.getInitialDeposit().doubleValue()>0, "Initial deposit must be positive!");
+        Validate.isTrue(newAccountRequest.getInitialDeposit().doubleValue()>=0, "Initial deposit must be positive!");
         Account.Builder accountBuilder = new Account.Builder()
                 .customerName(newAccountRequest.getCustomerName())
                 .overdraftLimit(newAccountRequest.getOverDraftLimit());

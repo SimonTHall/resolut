@@ -32,6 +32,12 @@ public class AccountCache implements AccountRepository {
         return copyOf(newAccount);
     }
 
+    /**
+     * Updates the account only if no other thread has already updated it.
+     * This is checked by ensuring that the last transaction id in the old version is present in the new version.
+     * If it is not then the data being used is out of date, and thus the change is rolled back and 
+     * a {@link ConcurrentModificationException} is thrown.
+     */
     @Override
     public Account update(Account account) {
         Account newAccount = copyOf(account);

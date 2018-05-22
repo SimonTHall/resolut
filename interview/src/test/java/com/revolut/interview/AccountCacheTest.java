@@ -19,7 +19,7 @@ public class AccountCacheTest {
     private AccountCache testee = new AccountCache();
     
     @Before
-    public void setUpTestData() {
+    public void clearData() {
         AccountCache.clearAndReset();
     }
     
