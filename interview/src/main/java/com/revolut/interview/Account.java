@@ -52,10 +52,23 @@ public class Account {
     }
     
     public Integer getLastTransactionId() {
-        return getLastTransaction().getId();
+        AccountTransaction lastTransaction = getLastTransaction();         
+        return lastTransaction==null? null : getLastTransaction().getId();
     }
-
+    
+    public Integer getLastNonNullTransactionId() {
+        for(int i=transactions.size() - 1; i >= 0; i--) {
+            if (transactions.get(i).getId()!=null) {
+                return transactions.get(i).getId();
+            }
+        }
+        return null;
+    }
+    
     private AccountTransaction getLastTransaction() {
+        if (this.transactions.isEmpty()) {
+            return null;
+        }
         return this.transactions.get(this.transactions.size() - 1);
     }
     

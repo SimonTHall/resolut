@@ -24,6 +24,21 @@ public class AccountCacheTest {
     }
     
     @Test
+    public void testCreateAccountWithNoTransactions() {
+        Account testAccount =new Account.Builder()
+                .customerName("Joe Smith")
+                .build();
+        
+        Account resultAccount = testee.create(testAccount);
+        resultAccount = testee.update(resultAccount);
+        
+        assertThat(resultAccount).isNotSameAs(testAccount);
+        assertThat(resultAccount.getNumber()).isEqualTo(1);
+        assertThat(resultAccount.getCustomerName()).isEqualTo("Joe Smith");
+        assertThat(resultAccount.getTransactions()).hasSize(0);
+    }
+    
+    @Test
     public void testCreateAccount() {
         Account testAccount = createAccount();
         
@@ -90,7 +105,7 @@ public class AccountCacheTest {
         assertThat(updatedAccounts.getRight().getNumber()).isEqualTo(2);
         assertThat(updatedAccounts.getRight().getTransactions()).hasSize(2);    
     }
-    
+        
     @Test
     public void testUpdateAccountsWithPairInReverse() {
         Account testAccount1 = createAccount();        

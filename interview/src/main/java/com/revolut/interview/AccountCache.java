@@ -11,7 +11,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class AccountCache implements AccountRepository {
-    
+
     private static AtomicInteger accountCounter = new AtomicInteger();
     private static AtomicInteger transactionCounter = new AtomicInteger();
     
@@ -26,7 +26,7 @@ public class AccountCache implements AccountRepository {
     @Override
     public Account create(Account account) {
         Account newAccount = copyOf(account);
-        newAccount.setNumber(accountCounter.incrementAndGet());
+        newAccount.setNumber(new Integer(accountCounter.incrementAndGet()));
         setTransactionIds(newAccount);
         cache.put(newAccount.getNumber(), newAccount);
         return copyOf(newAccount);
@@ -34,7 +34,8 @@ public class AccountCache implements AccountRepository {
 
     /**
      * Updates the account only if no other thread has already updated it.
-     * This is checked by ensuring that the last transaction id in the old version is present in the new version.
+     * This is checked by ensuring that the last transaction id in the old version is present in the new version 
+     * and is the last before any of the new transactions in the updated account.
      * If it is not then the data being used is out of date, and thus the change is rolled back and 
      * a {@link ConcurrentModificationException} is thrown.
      */
@@ -42,20 +43,19 @@ public class AccountCache implements AccountRepository {
     public Account update(Account account) {
         Account newAccount = copyOf(account);
         synchronized (newAccount.getNumber()) {
+            Integer lastTransactionId = newAccount.getLastNonNullTransactionId();
             setTransactionIds(newAccount);
             Account oldAccount = cache.put(newAccount.getNumber(), newAccount);
-            List<AccountTransaction> newTrans = newAccount.getTransactions();
-            Integer lastOldTransId = oldAccount.getLastTransactionId();
-            for(int i=newTrans.size() - 1; i>=0; i--) {
-                if (newTrans.get(i).getId().equals(lastOldTransId)) {
-                    return copyOf(newAccount);
-                }
+            if ((lastTransactionId==null && oldAccount.getLastTransactionId()==null) 
+                || lastTransactionId.equals(oldAccount.getLastTransactionId())) {
+                return copyOf(newAccount);
+            } else {
+                // if here then we need to roll back the change
+                cache.put(oldAccount.getNumber(), oldAccount);
+                throw new ConcurrentModificationException("Current excecution is aborted as account is out of date!");                
             }
-            // if here then we need to roll back the change
-            cache.put(oldAccount.getNumber(), oldAccount);
         }
                 
-        throw new ConcurrentModificationException("Current excecution is aborted as account is out of date!");
     }
 
     private void setTransactionIds(Account account) {
@@ -70,7 +70,7 @@ public class AccountCache implements AccountRepository {
             }
         }
         for (int i = transactions.size() - idCount; i<transactions.size(); i++) {
-            transactions.get(i).setId(transactionCounter.incrementAndGet());
+            transactions.get(i).setId(new Integer(transactionCounter.incrementAndGet()));
         }
     }
 
@@ -80,7 +80,7 @@ public class AccountCache implements AccountRepository {
         Validate.notNull(account, "Account number %d is not valid!", accountNo);
         return copyOf(account);
     }
-
+    
     /**
      * To reduces the chance of java deadlock we ensure that the accounts are synchronized in a consistent order.
      * The synchronization will then prevent any concurrent updates across the same accounts during the operation.
